@@ -1,0 +1,17 @@
+# Build output
+dist_new/
+build/
+*.spec
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files (contain production data)
+*.db
+
+# IDE
+.vscode/
+.idea/
+.claude/

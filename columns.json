@@ -1,0 +1,42 @@
+[
+  {
+    "key": "date",
+    "display": "Date",
+    "type": "combo",
+    "options": [],
+    "required": false,
+    "default": ""
+  },
+  {
+    "key": "model",
+    "display": "Model",
+    "type": "combo",
+    "options": [],
+    "required": false,
+    "default": ""
+  },
+  {
+    "key": "card_no",
+    "display": "Card no.",
+    "type": "entry",
+    "options": [],
+    "required": false,
+    "default": ""
+  },
+  {
+    "key": "problem",
+    "display": "Problem",
+    "type": "entry",
+    "options": [],
+    "required": false,
+    "default": ""
+  },
+  {
+    "key": "fault",
+    "display": "Fault",
+    "type": "entry",
+    "options": [],
+    "required": false,
+    "default": ""
+  }
+]
