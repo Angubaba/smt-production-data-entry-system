@@ -1,0 +1,3 @@
+@echo off
+echo Starting SMT Production Data Entry System...
+python smt_data_entry.py
