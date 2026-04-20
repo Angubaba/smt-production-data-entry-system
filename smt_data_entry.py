@@ -4227,9 +4227,8 @@ class QualitySheetFrame(ttk.Frame):
             calc.geometry(f"+{dlg.winfo_rootx()+(dlg.winfo_width()-calc.winfo_width())//2}"
                           f"+{dlg.winfo_rooty()+(dlg.winfo_height()-calc.winfo_height())//2}")
 
-        qty_entry = tk.Entry(dlg, textvariable=sv_qty, width=12, font=("Segoe UI", 10))
         qty_frame = tk.Frame(dlg, bg=app.BG)
-        qty_entry.pack(in_=qty_frame, side="left")
+        tk.Entry(qty_frame, textvariable=sv_qty, width=12, font=("Segoe UI", 10)).pack(side="left")
         ttk.Button(qty_frame, text="⊞", width=2, command=_open_calculator).pack(side="left", padx=(4, 0))
 
         for r,(lbl,widget) in enumerate([
