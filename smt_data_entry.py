@@ -4,6 +4,8 @@ import re
 import uuid
 import json
 import calendar
+import ast
+import operator as _op
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime, date
@@ -4131,11 +4133,22 @@ class QualitySheetFrame(ttk.Frame):
                  bg=app.BG, fg=app.DARK_BLUE,
                  font=("Segoe UI", 10, "bold")).grid(row=0,column=0,columnspan=2,padx=16,pady=(12,6))
 
+        def _safe_math(expr):
+            _ops = {ast.Add: _op.add, ast.Sub: _op.sub, ast.Mult: _op.mul,
+                    ast.Div: _op.truediv, ast.Pow: _op.pow,
+                    ast.USub: _op.neg, ast.UAdd: _op.pos}
+            def _node(n):
+                if isinstance(n, ast.Constant): return n.value
+                if isinstance(n, ast.BinOp):    return _ops[type(n.op)](_node(n.left), _node(n.right))
+                if isinstance(n, ast.UnaryOp):  return _ops[type(n.op)](_node(n.operand))
+                raise ValueError("unsupported")
+            return _node(ast.parse(expr, mode="eval").body)
+
         def _eval_qty_expr(event=None):
             val = sv_qty.get()
             if val.startswith("="):
                 try:
-                    result = eval(val[1:], {"__builtins__": {}}, {})
+                    result = _safe_math(val[1:])
                     final = int(result) if isinstance(result, float) and result.is_integer() else result
                     sv_qty.set(str(final))
                 except Exception:
