@@ -4175,6 +4175,7 @@ class QualitySheetFrame(ttk.Frame):
         txt_comment.grid(row=5, column=1, padx=16, pady=5, sticky="w")
         txt_comment.insert("1.0", data.get("comment", ""))
         def _save():
+            _eval_qty_expr()
             try:
                 qty = int(sv_qty.get() or 0); defects = int(sv_def.get() or 0)
             except ValueError:
