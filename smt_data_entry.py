@@ -4133,13 +4133,49 @@ class QualitySheetFrame(ttk.Frame):
 
         def _eval_qty_expr(event=None):
             val = sv_qty.get()
-            if val.startswith("="):
-                try:
-                    result = eval(val[1:])
-                    final = int(result) if isinstance(result, float) and result.is_integer() else result
-                    sv_qty.set(str(final))
-                except Exception:
-                    pass
+            if not val.startswith("="):
+                return
+            def _calc_expr(s):
+                s = s.replace(" ", "")
+                pos = [0]
+                def expr():   return additive()
+                def additive():
+                    v = multiplicative()
+                    while pos[0] < len(s) and s[pos[0]] in "+-":
+                        op = s[pos[0]]; pos[0] += 1
+                        r = multiplicative()
+                        v = v + r if op == "+" else v - r
+                    return v
+                def multiplicative():
+                    v = unary()
+                    while pos[0] < len(s) and s[pos[0]] in "*/":
+                        op = s[pos[0]]; pos[0] += 1
+                        r = unary()
+                        v = v * r if op == "*" else v / r
+                    return v
+                def unary():
+                    if pos[0] < len(s) and s[pos[0]] == "-":
+                        pos[0] += 1; return -primary()
+                    if pos[0] < len(s) and s[pos[0]] == "+":
+                        pos[0] += 1
+                    return primary()
+                def primary():
+                    if pos[0] < len(s) and s[pos[0]] == "(":
+                        pos[0] += 1; v = expr()
+                        if pos[0] < len(s) and s[pos[0]] == ")": pos[0] += 1
+                        return v
+                    start = pos[0]
+                    while pos[0] < len(s) and (s[pos[0]].isdigit() or s[pos[0]] == "."):
+                        pos[0] += 1
+                    if start == pos[0]: raise ValueError
+                    return float(s[start:pos[0]])
+                return expr()
+            try:
+                result = _calc_expr(val[1:])
+                final = int(result) if result == int(result) else round(result, 6)
+                sv_qty.set(str(final))
+            except Exception:
+                pass
 
         for r,(lbl,widget) in enumerate([
                 ("Line:",        ttk.Combobox(dlg, textvariable=sv_line,
