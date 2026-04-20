@@ -5,7 +5,7 @@ echo.
 if exist dist_new rmdir /s /q dist_new
 if exist build rmdir /s /q build
 
-py -3.14 -m PyInstaller -y --onedir --windowed --name "SMT_App" ^
+python -m PyInstaller -y --onedir --windowed --name "SMT_App" ^
   --add-data "columns.json;." ^
   --collect-all openpyxl ^
   --distpath "dist_new" ^

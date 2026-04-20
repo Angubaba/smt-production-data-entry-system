@@ -4229,7 +4229,8 @@ class QualitySheetFrame(ttk.Frame):
 
         qty_frame = tk.Frame(dlg, bg=app.BG)
         tk.Entry(qty_frame, textvariable=sv_qty, width=12, font=("Segoe UI", 10)).pack(side="left")
-        ttk.Button(qty_frame, text="⊞", width=2, command=_open_calculator).pack(side="left", padx=(4, 0))
+        tk.Button(qty_frame, text="Calc", font=("Segoe UI", 8), command=_open_calculator,
+                  relief="raised", bd=1, padx=4).pack(side="left", padx=(4, 0))
 
         for r,(lbl,widget) in enumerate([
                 ("Line:",        ttk.Combobox(dlg, textvariable=sv_line,
