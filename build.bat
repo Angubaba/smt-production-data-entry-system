@@ -14,7 +14,6 @@ python -m PyInstaller -y --onedir --windowed --name "SMT_App" ^
 if %errorlevel% neq 0 (
     echo.
     echo BUILD FAILED.
-    pause
     exit /b 1
 )
 
@@ -25,4 +24,3 @@ if exist smt_quality.db copy /y smt_quality.db dist_new\SMT_App\smt_quality.db
 
 echo.
 echo BUILD COMPLETE. App is in dist_new\SMT_App\
-pause
