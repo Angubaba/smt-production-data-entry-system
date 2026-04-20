@@ -4130,10 +4130,66 @@ class QualitySheetFrame(ttk.Frame):
         tk.Label(dlg, text=f"Day {day}  \u00b7  {MONTH_NAMES[self._month-1]} {self._year}",
                  bg=app.BG, fg=app.DARK_BLUE,
                  font=("Segoe UI", 10, "bold")).grid(row=0,column=0,columnspan=2,padx=16,pady=(12,6))
+
+        def _open_calculator():
+            calc = tk.Toplevel(dlg); calc.title("Calculator")
+            calc.resizable(False, False); calc.grab_set(); calc.configure(bg=app.BG)
+            expr = tk.StringVar(value="")
+            disp = tk.Entry(calc, textvariable=expr, font=("Segoe UI", 13), width=16,
+                            justify="right", state="readonly", readonlybackground="#f0f4f8")
+            disp.grid(row=0, column=0, columnspan=4, padx=10, pady=(10,4), ipady=4)
+            def _press(v):
+                expr.set(expr.get() + v)
+            def _clear():
+                expr.set("")
+            def _back():
+                expr.set(expr.get()[:-1])
+            def _eval():
+                try:
+                    raw = expr.get().replace("×","*").replace("÷","/")
+                    result = eval(raw, {"__builtins__": {}}, {})
+                    expr.set(str(int(result) if isinstance(result, float) and result.is_integer() else result))
+                except Exception:
+                    expr.set("Error")
+            def _use():
+                val = expr.get()
+                try:
+                    raw = val.replace("×","*").replace("÷","/")
+                    result = eval(raw, {"__builtins__": {}}, {})
+                    final = int(result) if isinstance(result, float) and result.is_integer() else result
+                    sv_qty.set(str(final))
+                except Exception:
+                    sv_qty.set(val)
+                calc.destroy()
+            buttons = [
+                ("7","8","9","÷"),
+                ("4","5","6","×"),
+                ("1","2","3","-"),
+                ("0",".","=","+"),
+            ]
+            for rr, row_btns in enumerate(buttons, 1):
+                for cc, btn in enumerate(row_btns):
+                    cmd = _eval if btn == "=" else lambda v=btn: _press(v)
+                    style = "Green.TButton" if btn == "=" else "TButton"
+                    ttk.Button(calc, text=btn, width=4, style=style,
+                               command=cmd).grid(row=rr, column=cc, padx=3, pady=3, ipady=4)
+            ttk.Button(calc, text="C",  width=4, command=_clear).grid(row=5,column=0,padx=3,pady=3,ipady=4)
+            ttk.Button(calc, text="⌫", width=4, command=_back ).grid(row=5,column=1,padx=3,pady=3,ipady=4)
+            ttk.Button(calc, text="Use Result", style="Green.TButton",
+                       command=_use).grid(row=5,column=2,columnspan=2,padx=3,pady=3,ipady=4,sticky="ew")
+            calc.update_idletasks()
+            calc.geometry(f"+{dlg.winfo_rootx()+(dlg.winfo_width()-calc.winfo_width())//2}"
+                          f"+{dlg.winfo_rooty()+(dlg.winfo_height()-calc.winfo_height())//2}")
+
+        qty_entry = tk.Entry(dlg, textvariable=sv_qty, width=12, font=("Segoe UI",10))
+        qty_frame = tk.Frame(dlg, bg=app.BG)
+        qty_entry.pack(in_=qty_frame, side="left")
+        ttk.Button(qty_frame, text="⊞", width=2, command=_open_calculator).pack(side="left", padx=(4,0))
+
         for r,(lbl,widget) in enumerate([
                 ("Line:",        ttk.Combobox(dlg, textvariable=sv_line,
                                               values=self._LINE_OPTS, width=13, state="readonly")),
-                ("Qty Produced:", tk.Entry(dlg, textvariable=sv_qty,  width=15, font=("Segoe UI",10))),
+                ("Qty Produced:", qty_frame),
                 ("Defects:",      tk.Entry(dlg, textvariable=sv_def,  width=15, font=("Segoe UI",10))),
                 ("DPMO (calc):",  tk.Entry(dlg, textvariable=sv_dpmo, width=15,
                                            font=("Segoe UI",10), state="readonly"))], 1):
