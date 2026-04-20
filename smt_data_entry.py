@@ -4131,66 +4131,117 @@ class QualitySheetFrame(ttk.Frame):
                  bg=app.BG, fg=app.DARK_BLUE,
                  font=("Segoe UI", 10, "bold")).grid(row=0,column=0,columnspan=2,padx=16,pady=(12,6))
 
-        def _eval_qty_expr(event=None):
-            val = sv_qty.get()
-            if not val.startswith("="):
-                return
-            def _calc_expr(s):
-                s = s.replace(" ", "")
-                pos = [0]
-                def expr():   return additive()
-                def additive():
-                    v = multiplicative()
-                    while pos[0] < len(s) and s[pos[0]] in "+-":
-                        op = s[pos[0]]; pos[0] += 1
-                        r = multiplicative()
-                        v = v + r if op == "+" else v - r
-                    return v
-                def multiplicative():
-                    v = unary()
-                    while pos[0] < len(s) and s[pos[0]] in "*/":
-                        op = s[pos[0]]; pos[0] += 1
-                        r = unary()
-                        v = v * r if op == "*" else v / r
-                    return v
-                def unary():
-                    if pos[0] < len(s) and s[pos[0]] == "-":
-                        pos[0] += 1; return -primary()
-                    if pos[0] < len(s) and s[pos[0]] == "+":
-                        pos[0] += 1
-                    return primary()
-                def primary():
-                    if pos[0] < len(s) and s[pos[0]] == "(":
-                        pos[0] += 1; v = expr()
-                        if pos[0] < len(s) and s[pos[0]] == ")": pos[0] += 1
+        def _open_calculator():
+            calc = tk.Toplevel(dlg)
+            calc.title("Calculator"); calc.resizable(False, False)
+            calc.grab_set(); calc.configure(bg=app.BG)
+            expr_var = tk.StringVar(value="")
+
+            disp = tk.Entry(calc, textvariable=expr_var, font=("Segoe UI", 13), width=18,
+                            justify="right", bg="#f0f4f8", relief="flat", bd=4)
+            disp.grid(row=0, column=0, columnspan=4, padx=10, pady=(10, 4), ipady=6, sticky="ew")
+
+            def _append(v):
+                expr_var.set(expr_var.get() + v)
+                disp.icursor("end")
+            def _clear():   expr_var.set("")
+            def _back():    expr_var.set(expr_var.get()[:-1])
+            def _evaluate():
+                s = expr_var.get().strip()
+                if not s:
+                    return
+                def _calc_expr(s):
+                    s = s.replace(" ", "")
+                    pos = [0]
+                    def expr():
+                        return additive()
+                    def additive():
+                        v = multiplicative()
+                        while pos[0] < len(s) and s[pos[0]] in "+-":
+                            op = s[pos[0]]; pos[0] += 1
+                            r = multiplicative()
+                            v = v + r if op == "+" else v - r
                         return v
-                    start = pos[0]
-                    while pos[0] < len(s) and (s[pos[0]].isdigit() or s[pos[0]] == "."):
-                        pos[0] += 1
-                    if start == pos[0]: raise ValueError
-                    return float(s[start:pos[0]])
-                return expr()
-            try:
-                result = _calc_expr(val[1:])
-                final = int(result) if result == int(result) else round(result, 6)
-                sv_qty.set(str(final))
-            except Exception:
-                pass
+                    def multiplicative():
+                        v = unary()
+                        while pos[0] < len(s) and s[pos[0]] in "*/":
+                            op = s[pos[0]]; pos[0] += 1
+                            r = unary()
+                            v = v * r if op == "*" else v / r
+                        return v
+                    def unary():
+                        if pos[0] < len(s) and s[pos[0]] == "-":
+                            pos[0] += 1; return -primary()
+                        if pos[0] < len(s) and s[pos[0]] == "+":
+                            pos[0] += 1
+                        return primary()
+                    def primary():
+                        if pos[0] < len(s) and s[pos[0]] == "(":
+                            pos[0] += 1; v = expr()
+                            if pos[0] < len(s) and s[pos[0]] == ")": pos[0] += 1
+                            return v
+                        start = pos[0]
+                        while pos[0] < len(s) and (s[pos[0]].isdigit() or s[pos[0]] == "."):
+                            pos[0] += 1
+                        if start == pos[0]: raise ValueError
+                        return float(s[start:pos[0]])
+                    return expr()
+                try:
+                    result = _calc_expr(s)
+                    final = int(result) if result == int(result) else round(result, 6)
+                    expr_var.set(str(final))
+                except Exception:
+                    pass
+            def _use():
+                _evaluate()
+                sv_qty.set(expr_var.get())
+                calc.destroy()
+
+            btn_cfg = [
+                ("7","8","9","/"),
+                ("4","5","6","*"),
+                ("1","2","3","-"),
+                ("0",".",  "(",")"),
+            ]
+            for rr, row in enumerate(btn_cfg, 1):
+                for cc, ch in enumerate(row):
+                    ttk.Button(calc, text=ch, width=4,
+                               command=lambda v=ch: _append(v)
+                               ).grid(row=rr, column=cc, padx=3, pady=3, ipady=5)
+            ttk.Button(calc, text="C",  width=4, command=_clear    ).grid(row=5, column=0, padx=3, pady=3, ipady=5)
+            ttk.Button(calc, text="⌫", width=4, command=_back     ).grid(row=5, column=1, padx=3, pady=3, ipady=5)
+            ttk.Button(calc, text="=",  width=4, style="Green.TButton",
+                       command=_evaluate).grid(row=5, column=2, padx=3, pady=3, ipady=5)
+            ttk.Button(calc, text="Use", style="Green.TButton",
+                       command=_use).grid(row=5, column=3, padx=3, pady=3, ipady=5)
+
+            # keyboard bindings on the display entry
+            disp.bind("<Return>",    lambda e: _use())
+            disp.bind("<KP_Enter>",  lambda e: _use())
+            disp.bind("<Escape>",    lambda e: calc.destroy())
+            # allow typing directly: digits and operators go through normally,
+            # intercept Enter/Escape only
+            disp.focus_set()
+
+            calc.update_idletasks()
+            calc.geometry(f"+{dlg.winfo_rootx()+(dlg.winfo_width()-calc.winfo_width())//2}"
+                          f"+{dlg.winfo_rooty()+(dlg.winfo_height()-calc.winfo_height())//2}")
+
+        qty_entry = tk.Entry(dlg, textvariable=sv_qty, width=12, font=("Segoe UI", 10))
+        qty_frame = tk.Frame(dlg, bg=app.BG)
+        qty_entry.pack(in_=qty_frame, side="left")
+        ttk.Button(qty_frame, text="⊞", width=2, command=_open_calculator).pack(side="left", padx=(4, 0))
 
         for r,(lbl,widget) in enumerate([
                 ("Line:",        ttk.Combobox(dlg, textvariable=sv_line,
                                               values=self._LINE_OPTS, width=13, state="readonly")),
-                ("Qty Produced:", tk.Entry(dlg, textvariable=sv_qty,  width=15, font=("Segoe UI",10))),
+                ("Qty Produced:", qty_frame),
                 ("Defects:",      tk.Entry(dlg, textvariable=sv_def,  width=15, font=("Segoe UI",10))),
                 ("DPMO (calc):",  tk.Entry(dlg, textvariable=sv_dpmo, width=15,
                                            font=("Segoe UI",10), state="readonly"))], 1):
             tk.Label(dlg, text=lbl, bg=app.BG,
                      font=("Segoe UI", 9)).grid(row=r,column=0,padx=16,pady=5,sticky="w")
             widget.grid(row=r,column=1,padx=16,pady=5,sticky="w")
-            if lbl == "Qty Produced:":
-                widget.bind("<Return>", _eval_qty_expr)
-                widget.bind("<Tab>",    _eval_qty_expr)
-                widget.bind("<FocusOut>", _eval_qty_expr)
         # Comment field
         tk.Label(dlg, text="Comment:", bg=app.BG,
                  font=("Segoe UI", 9)).grid(row=5, column=0, padx=16, pady=5, sticky="nw")
@@ -4198,7 +4249,6 @@ class QualitySheetFrame(ttk.Frame):
         txt_comment.grid(row=5, column=1, padx=16, pady=5, sticky="w")
         txt_comment.insert("1.0", data.get("comment", ""))
         def _save():
-            _eval_qty_expr()
             try:
                 qty = int(sv_qty.get() or 0); defects = int(sv_def.get() or 0)
             except ValueError:
