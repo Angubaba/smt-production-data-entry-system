@@ -3025,11 +3025,20 @@ def qs_delete_model(model_id):
         conn.execute("DELETE FROM quality_models WHERE id=?",       (model_id,))
         conn.commit()
 
+def _norm_line(line):
+    """Normalise line names: 'LINE4' -> 'LINE 4', 'line 3' -> 'LINE 3'."""
+    if not line:
+        return "LINE 1"
+    s = line.strip().upper()
+    import re as _re
+    m = _re.search(r'(\d+)', s)
+    return "LINE " + m.group(1) if m else s
+
 def qs_save_daily(model_id, day, qty, defects, line="LINE 1", comment=""):
     with qs_get_conn() as conn:
         conn.execute(
             "INSERT OR REPLACE INTO quality_daily(model_id,day,qty,defects,line,comment) "
-            "VALUES(?,?,?,?,?,?)", (model_id, day, qty, defects, line, comment or ""))
+            "VALUES(?,?,?,?,?,?)", (model_id, day, qty, defects, _norm_line(line), comment or ""))
         conn.commit()
 
 def qs_get_model_daily(model_id):
@@ -3037,7 +3046,7 @@ def qs_get_model_daily(model_id):
         rows = conn.execute(
             "SELECT day,qty,defects,line,comment FROM quality_daily WHERE model_id=? ORDER BY day",
             (model_id,)).fetchall()
-    return {r[0]: {"qty": r[1], "defects": r[2], "line": r[3] or "LINE 1", "comment": r[4] or ""} for r in rows}
+    return {r[0]: {"qty": r[1], "defects": r[2], "line": _norm_line(r[3]), "comment": r[4] or ""} for r in rows}
 
 def qs_search(year=None, month=None, model_text=None, day=None):
     with qs_get_conn() as conn:
@@ -3062,7 +3071,7 @@ def qs_search(year=None, month=None, model_text=None, day=None):
         dpmo = (round((defects / (qty * sj)) * 1_000_000, 1)
                 if qty and sj else 0)
         results.append({"year":yr,"month":mo,"sr_no":sr_no,"model":model,
-                         "line": line or "LINE 1",
+                         "line": _norm_line(line),
                          "solder_joints":sj,"dpmo_threshold":thresh,
                          "day":d,"qty":qty,"defects":defects,"dpmo":dpmo})
     return results
